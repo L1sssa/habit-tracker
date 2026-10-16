@@ -1,23 +1,40 @@
-export function calculateStreak(dates: Date[]): number {
+import { differenceInCalendarDays, parseISO, subDays } from 'date-fns';
+
+/**
+ * Вычисляет текущую серию (streak) выполнения привычки.
+ *
+ * Streak считается с сегодняшнего дня назад, пока даты идут подряд.
+ * Если сегодня не отмечено, но вчера отмечено — серия продолжается.
+ * Если пропущено 2+ дня — серия сбрасывается в 0.
+ *
+ * @param dates - Массив дат в формате ISO (YYYY-MM-DD).
+ * @returns Количество дней подряд, когда привычка выполнялась.
+ *
+ * @example
+ * calculateStreak(['2026-10-14', '2026-10-15', '2026-10-16']);
+ * // вернёт 3
+ */
+export const calculateStreak = (dates: string[]): number => {
   if (dates.length === 0) return 0;
 
-  const sortedDates = dates.sort((a, b) => a.getTime() - b.getTime());
-  let streak = 1;
+  const today = new Date();
+  const sortedDates = dates
+    .map((date) => parseISO(date))
+    .sort((a, b) => b.getTime() - a.getTime());
 
-  for (let i = 1; i < sortedDates.length; i++) {
-    const prevDate = sortedDates[i - 1];
-    const currDate = sortedDates[i];
+  let streak = 0;
+  let checkDate = today;
 
-    const diffInDays = Math.floor(
-      (currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+  for (const date of sortedDates) {
+    const diff = differenceInCalendarDays(checkDate, date);
 
-    if (diffInDays === 1) {
-      streak++;
-    } else if (diffInDays > 1) {
-      streak = 1;
+    if (diff === 0 || diff === 1) {
+      streak += 1;
+      checkDate = subDays(checkDate, 1);
+    } else {
+      break;
     }
   }
 
   return streak;
-}
+};

@@ -1,0 +1,123 @@
+.add-habit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #eaeaea;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.add-habit-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.add-habit-form__label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.add-habit-form__input {
+  padding: 12px 14px;
+  font-size: 15px;
+  color: #1a1a1a;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.add-habit-form__input:focus {
+  background: #ffffff;
+  border-color: #1e5fa8;
+}
+
+.add-habit-form__input::placeholder {
+  color: #a0a0a0;
+}
+
+.add-habit-form__error {
+  font-size: 13px;
+  color: #c62828;
+}
+
+.add-habit-form__colors {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.add-habit-form__color {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.add-habit-form__color:hover {
+  transform: scale(1.1);
+}
+
+.add-habit-form__color.is-active {
+  border-color: #1a1a1a;
+  transform: scale(1.1);
+}
+
+.add-habit-form__types {
+  display: flex;
+  gap: 8px;
+}
+
+.add-habit-form__type {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+  background: #fafafa;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.add-habit-form__type:hover {
+  background: #f0f0f0;
+}
+
+.add-habit-form__type.is-active {
+  background: #1e5fa8;
+  color: #ffffff;
+  border-color: #1e5fa8;
+}
+
+.add-habit-form__submit {
+  margin-top: 4px;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #1e5fa8;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.add-habit-form__submit:hover {
+  background: #174a85;
+}
+
+.add-habit-form__submit:active {
+  transform: translateY(1px);
+}
