@@ -57,3 +57,5 @@ habit-tracker/
 ├── prompt_methodology.md # Chain-of-Thought
 ├── testing.md            # Тестирование правил
 └── README.md
+
+**Полный отчёт по ДЗ №2:** [REPORT_HW2.md](./REPORT_HW2.md)
