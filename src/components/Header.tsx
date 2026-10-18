@@ -2,11 +2,9 @@ import { useAuth } from '../context/AuthContext';
 import './Header.css';
 
 interface HeaderProps {
-  onAddClick: () => void;
   onLoginClick: () => void;
 }
-
-export const Header = ({ onAddClick, onLoginClick }: HeaderProps) => {
+export const Header = ({ onLoginClick }: HeaderProps) => {
   const { user, signOut } = useAuth();
 
   return (

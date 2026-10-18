@@ -35,23 +35,27 @@ export const useHabits = () => {
       return;
     }
 
-    // Преобразуем данные
-    const formattedHabits: Habit[] = data.map((item: any) => ({
-      id: item.id,
-      name: item.name,
-      color: item.color,
+    // Преобразуем данные из БД в наш формат Habit (без использования any)
+    const formattedHabits: Habit[] = data.map((item: Record<string, unknown>) => ({
+      id: item.id as string,
+      name: item.name as string,
+      color: item.color as string,
       type: item.type as HabitType,
-      createdAt: item.created_at,
-      completedDates: item.habit_completions.map((c: any) => c.completed_date),
+      createdAt: item.created_at as string,
+      completedDates: (item.habit_completions as Array<{ completed_date: string }>).map(
+        (c) => c.completed_date
+      ),
     }));
 
     setHabits(formattedHabits);
     setLoading(false);
   }, [user]);
-
+  
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHabits();
-  }, [fetchHabits]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Добавление привычки
   const addHabit = async (name: string, color: string, type: HabitType) => {

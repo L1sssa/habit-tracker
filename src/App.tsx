@@ -35,7 +35,7 @@ function App() {
 
   return (
     <div className="app">
-      <Header onAddClick={handleAddClick} onLoginClick={() => setShowLogin(true)} />
+      <Header  onLoginClick={() => setShowLogin(true)} />
       
       {showLogin && <LoginPage onClose={() => setShowLogin(false)} />}
 
