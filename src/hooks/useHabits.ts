@@ -1,87 +1,163 @@
 import { useCallback, useEffect, useState } from 'react';
-
+import { supabase } from '../api/supabase';
+import { useAuth } from '../context/AuthContext';
 import type { Habit, HabitType } from '../types/habit';
 
-const STORAGE_KEY = 'habit-tracker:habits';
-
-const getTodayISO = (): string => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const loadHabits = (): Habit[] => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed;
-  } catch (error) {
-    console.error('Ошибка загрузки привычек:', error);
-    return [];
-  }
-};
-
 export const useHabits = () => {
-  const [habits, setHabits] = useState<Habit[]>(loadHabits);
+  const { user } = useAuth();
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Загрузка привычек из БД
+  const fetchHabits = useCallback(async () => {
+    if (!user) {
+      setHabits([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+
+    const { data, error } = await supabase
+      .from('habits')
+      .select(`
+        *,
+        habit_completions (completed_date)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Ошибка загрузки привычек:', error);
+      setErrorMsg('Не удалось загрузить привычки. Обновите страницу.');
+      setLoading(false);
+      return;
+    }
+
+    // Преобразуем данные
+    const formattedHabits: Habit[] = data.map((item: any) => ({
+      id: item.id,
+      name: item.name,
+      color: item.color,
+      type: item.type as HabitType,
+      createdAt: item.created_at,
+      completedDates: item.habit_completions.map((c: any) => c.completed_date),
+    }));
+
+    setHabits(formattedHabits);
+    setLoading(false);
+  }, [user]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(habits));
-    } catch (error) {
-      console.error('Ошибка сохранения привычек:', error);
-    }
-  }, [habits]);
+    fetchHabits();
+  }, [fetchHabits]);
 
-  const addHabit = useCallback((name: string, color: string, type: HabitType) => {
+  // Добавление привычки
+  const addHabit = async (name: string, color: string, type: HabitType) => {
+    if (!user) return;
     const trimmed = name.trim();
     if (!trimmed) return;
 
+    setErrorMsg(null);
+
+    const { data, error } = await supabase
+      .from('habits')
+      .insert([{ name: trimmed, color, type, user_id: user.id }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Ошибка добавления:', error);
+      setErrorMsg('Не удалось добавить привычку.');
+      return;
+    }
+
     const newHabit: Habit = {
-      id: crypto.randomUUID(),
-      name: trimmed,
-      color,
-      type,
-      createdAt: new Date().toISOString(),
+      id: data.id,
+      name: data.name,
+      color: data.color,
+      type: data.type as HabitType,
+      createdAt: data.created_at,
       completedDates: [],
     };
-
     setHabits((prev) => [newHabit, ...prev]);
-  }, []);
+  };
 
-  const deleteHabit = useCallback((id: string) => {
+  // Удаление привычки
+  const deleteHabit = async (id: string) => {
+    if (!user) return;
+    setErrorMsg(null);
+
+    const { error } = await supabase.from('habits').delete().eq('id', id);
+
+    if (error) {
+      console.error('Ошибка удаления:', error);
+      setErrorMsg('Не удалось удалить привычку.');
+      return;
+    }
+
     setHabits((prev) => prev.filter((habit) => habit.id !== id));
-  }, []);
+  };
 
-  const toggleHabitForDate = useCallback((id: string, dateISO: string) => {
-    setHabits((prev) =>
-      prev.map((habit) => {
-        if (habit.id !== id) return habit;
+  // Отметка за дату
+  const toggleHabitForDate = async (habitId: string, dateISO: string) => {
+    if (!user) return;
 
-        const alreadyDone = habit.completedDates.includes(dateISO);
+    const habit = habits.find((h) => h.id === habitId);
+    if (!habit) return;
 
-        return {
-          ...habit,
-          completedDates: alreadyDone
-            ? habit.completedDates.filter((date) => date !== dateISO)
-            : [...habit.completedDates, dateISO],
-        };
-      })
-    );
-  }, []);
+    setErrorMsg(null);
+    const isDone = habit.completedDates.includes(dateISO);
 
-  const toggleHabit = useCallback((id: string) => {
-    toggleHabitForDate(id, getTodayISO());
-  }, [toggleHabitForDate]);
+    if (isDone) {
+      // Удаляем отметку
+      const { error } = await supabase
+        .from('habit_completions')
+        .delete()
+        .eq('habit_id', habitId)
+        .eq('completed_date', dateISO);
+
+      if (error) {
+        console.error('Ошибка удаления отметки:', error);
+        setErrorMsg('Не удалось снять отметку.');
+        return;
+      }
+
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === habitId
+            ? { ...h, completedDates: h.completedDates.filter((d) => d !== dateISO) }
+            : h
+        )
+      );
+    } else {
+      // Добавляем отметку
+      const { error } = await supabase
+        .from('habit_completions')
+        .insert([{ habit_id: habitId, user_id: user.id, completed_date: dateISO }]);
+
+      if (error) {
+        console.error('Ошибка добавления отметки:', error);
+        setErrorMsg('Не удалось отметить привычку.');
+        return;
+      }
+
+      setHabits((prev) =>
+        prev.map((h) =>
+          h.id === habitId ? { ...h, completedDates: [...h.completedDates, dateISO] } : h
+        )
+      );
+    }
+  };
 
   return {
     habits,
+    loading,
+    errorMsg,
+    clearError: () => setErrorMsg(null),
     addHabit,
     deleteHabit,
-    toggleHabit,
     toggleHabitForDate,
   };
 };

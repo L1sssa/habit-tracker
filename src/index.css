@@ -75,3 +75,6 @@ button {
     font-size: 24px;
   }
 }
+html {
+  scroll-behavior: smooth;
+}
